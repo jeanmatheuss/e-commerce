@@ -1,0 +1,2 @@
+n_rows,missing_pct_n_orders,missing_pct_revenue,missing_pct_avg_price,missing_pct_avg_freight,missing_pct_n_sellers,missing_pct_pay_total_avg,missing_pct_inst_avg,missing_pct_inst_max,missing_pct_qty,missing_pct_cancel_qty,missing_pct_qty_roll_mean_7,missing_pct_qty_roll_mean_28
+129,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0

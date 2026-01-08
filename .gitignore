@@ -1,1 +1,5 @@
-/data
+/data/raw
+/data/olist.db
+/src/__pycache__
+/sql/teste.sql
+/mlruns
