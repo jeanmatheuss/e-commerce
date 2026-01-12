@@ -1,0 +1,23 @@
+artifact_path: "file:///C:\\Users\\jeanm\\Documents\\Curso An\xE1lise de dados\\Reposit\xF3\
+  rios Git\\ecommerce\\e-commerce\\e-commerce\\mlruns/410422619302439386/models/m-017e035846a24d20a9b66ab4e79e8197/artifacts"
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.12.7
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.5.1
+mlflow_version: 3.1.0
+model_id: m-017e035846a24d20a9b66ab4e79e8197
+model_size_bytes: 622601
+model_uuid: m-017e035846a24d20a9b66ab4e79e8197
+prompts: null
+run_id: 1a35cd7693c94eaf884ae125d494c863
+utc_time_created: '2026-01-09 18:55:38.090025'

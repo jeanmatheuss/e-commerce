@@ -1,0 +1,11 @@
+artifact_location: file:///C:\Users\jeanm\Documents\Curso Análise de dados\Repositórios
+  Git\ecommerce\e-commerce\e-commerce\mlruns/410422619302439386/models/m-1f63142cd3a74a2ca344ada2ad838e2c/artifacts
+creation_timestamp: 1767984860370
+experiment_id: '410422619302439386'
+last_updated_timestamp: 1767984878495
+model_id: m-1f63142cd3a74a2ca344ada2ad838e2c
+model_type: null
+name: model
+source_run_id: d00fa596cd774875aef4bbef055869cd
+status: 2
+status_message: null

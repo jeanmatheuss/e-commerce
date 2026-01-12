@@ -1,0 +1,15 @@
+artifact_uri: file:///C:\Users\jeanm\Documents\Curso Análise de dados\Repositórios
+  Git\ecommerce\e-commerce\e-commerce\mlruns/410422619302439386/d492c51e3209491bbc0535477377af54/artifacts
+end_time: 1767984929682
+entry_point_name: ''
+experiment_id: '410422619302439386'
+lifecycle_stage: active
+run_id: d492c51e3209491bbc0535477377af54
+run_name: y_qty_h7
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1767984910927
+status: 3
+tags: []
+user_id: jeanm

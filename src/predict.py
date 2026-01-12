@@ -1,11 +1,50 @@
 import pandas as pd
 import numpy as np
 import mlflow
+import os
+
 from datetime import datetime
+from mlflow.tracking import MlflowClient
+from pathlib import Path
 
 from src.utils import db_conn, read_sql, ensure_dir
 
 HORIZONS = (1,7,14)
+client = MlflowClient()
+project_root = Path(__file__).resolve().parents[1]  # src/.. = raiz
+mlruns_dir = project_root / "mlruns"
+mlflow.set_tracking_uri(mlruns_dir.as_uri())
+
+def load_latest_model(model_name: str, experiment_name: str = "ecom_fs_forecast", artifact_subpath: str = "model"):
+    """
+    1) Tenta carregar do Model Registry (models:/name/<versão>).
+    2) Se Registry estiver vazio, carrega do último RUN que logou o artifact 'model'.
+    """
+    # --- 1) tenta registry (se existir)
+    versions = client.search_model_versions(f"name='{model_name}'")
+    if versions:
+        latest = max(versions, key=lambda v: int(v.version))
+        return mlflow.pyfunc.load_model(f"models:/{model_name}/{latest.version}")
+
+    # --- 2) fallback via runs (sem registry)
+    exp = client.get_experiment_by_name(experiment_name)
+    if exp is None:
+        raise RuntimeError(f"Experimento '{experiment_name}' não encontrado no tracking store atual.")
+
+    runs = client.search_runs(
+        [exp.experiment_id],
+        filter_string=f"tags.model_name = '{model_name}'",
+        order_by=["attributes.start_time DESC"],
+        max_results=1,
+    )
+    if not runs:
+        raise RuntimeError(
+            f"Não encontrei RUN no experimento '{experiment_name}' com tag model_name='{model_name}'. "
+            f"Garanta que no treino você setou mlflow.set_tag('model_name', model_name)."
+        )
+
+    run_id = runs[0].info.run_id
+    return mlflow.pyfunc.load_model(f"runs:/{run_id}/{artifact_subpath}")
 
 def load_latest_fs(conn, as_of_ds: str):
     df = read_sql(conn, """
@@ -15,6 +54,20 @@ def load_latest_fs(conn, as_of_ds: str):
     return df
 
 def predict_all(db_path: str, as_of_ds: str, experiment="ecom_fs_forecast"):
+
+    # força o mesmo tracking do treino (ajuste se necessário)
+    mlruns_dir = os.path.abspath("mlruns")
+    mlflow.set_tracking_uri(f"file:///{mlruns_dir}")
+
+    print("[PRED] tracking_uri =", mlflow.get_tracking_uri())
+    print("[PRED] mlruns_dir   =", mlruns_dir)
+
+    client = MlflowClient()
+    print("[PRED] registered_models =", [m.name for m in client.search_registered_models()])
+        
+    print("[PRED] MLFLOW_TRACKING_URI =", mlflow.get_tracking_uri())
+    client = MlflowClient()
+    print("[PRED] models =", [m.name for m in client.search_registered_models()])
     mlflow.set_experiment(experiment)
     ensure_dir("exports")
 
@@ -46,8 +99,8 @@ def predict_all(db_path: str, as_of_ds: str, experiment="ecom_fs_forecast"):
             demand_name = f"demand_product_region_h{h}"
             cancel_name = f"cancel_product_region_h{h}"
 
-            demand_model = mlflow.pyfunc.load_model(f"models:/{demand_name}/latest")
-            cancel_model = mlflow.pyfunc.load_model(f"models:/{cancel_name}/latest")
+            demand_model = load_latest_model(demand_name)
+            cancel_model = load_latest_model(cancel_name)
 
             pred_qty = demand_model.predict(Xf)
             pred_cancel = cancel_model.predict(Xf)
@@ -85,3 +138,9 @@ def predict_all(db_path: str, as_of_ds: str, experiment="ecom_fs_forecast"):
 if __name__ == "__main__":
     df = predict_all("data/olist.db", as_of_ds="2018-08-26")
     print(df.head())
+
+#%%
+client = MlflowClient()
+print(client.search_model_versions("name='demand_product_region_h1'"))
+
+# %%

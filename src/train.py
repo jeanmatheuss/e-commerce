@@ -10,6 +10,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import HistGradientBoostingRegressor
+from pathlib import Path
 
 from src.utils import db_conn, read_sql, ensure_dir
 
@@ -97,7 +98,15 @@ def time_split(df: pd.DataFrame, train_end: str, val_weeks: int = 8):
     return train_df, val_df
 
 def train_all(db_path: str, train_end: str, horizons=(1,7,14), experiment="ecom_fs_forecast"):
-    ensure_dir("mlruns")
+    
+    # 1) Garantir que treino e predição usem o MESMO mlruns (na raiz do projeto)
+    project_root = Path(__file__).resolve().parents[1]   
+    mlruns_dir = project_root / "mlruns"
+    mlruns_dir.mkdir(parents=True, exist_ok=True)
+
+    mlflow.set_tracking_uri(mlruns_dir.as_uri())
+    print("[TREINO] MLFLOW_TRACKING_URI =", mlflow.get_tracking_uri())
+
     mlflow.set_experiment(experiment)
 
     with db_conn(db_path) as conn:
@@ -126,6 +135,8 @@ def train_all(db_path: str, train_end: str, horizons=(1,7,14), experiment="ecom_
 
             run_name = f"{target_name}"
             with mlflow.start_run(run_name=run_name):
+                model_name = f"{'demand' if 'qty' in target_name else 'cancel'}_product_region_h{h}"
+                mlflow.set_tag("model_name", model_name)
                 mlflow.log_param("target", target_name)
                 mlflow.log_param("horizon", h)
                 mlflow.log_param("train_end", train_end)
@@ -144,8 +155,11 @@ def train_all(db_path: str, train_end: str, horizons=(1,7,14), experiment="ecom_
                 mlflow.log_metrics(metrics)
 
                 # salva modelo
-                model_name = f"{'demand' if 'qty' in target_name else 'cancel'}_product_region_h{h}"
-                mlflow.sklearn.log_model(pipe, name="model")
+                mlflow.sklearn.log_model(    
+                    sk_model=pipe,
+                    name="model",
+                    registered_model_name=model_name,  # <- isso cria/atualiza no Registry
+                    )
 
                 results.append({
                     "target": target_name,
@@ -157,7 +171,8 @@ def train_all(db_path: str, train_end: str, horizons=(1,7,14), experiment="ecom_
                     "val_end": str(val_df["ds"].max().date()),
                     "model_name": model_name,
                 })
-
+                
+    print("[TREINO] MLFLOW_TRACKING_URI =", mlflow.get_tracking_uri())
     return pd.DataFrame(results)
 
 if __name__ == "__main__":

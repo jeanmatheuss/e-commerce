@@ -1,5 +1,6 @@
 import argparse
 import os
+import mlflow
 
 from src.extract_load import load_all
 from src.run_sql import run_all
@@ -10,13 +11,22 @@ from src.export_powerbi import export_all
 
 DB_PATH = os.path.join("data", "olist.db")
 
+def set_mlflow_local():
+    mlruns_dir = os.path.abspath("mlruns")
+    mlflow.set_tracking_uri(f"file:///{mlruns_dir}")
+    print("[MLflow] tracking_uri =", mlflow.get_tracking_uri())
+
+
 def main(train_end: str, as_of_ds: str, rebuild_staging: bool = True):
+    set_mlflow_local()
+    
     print("=== 1) EXTRAÇÃO/LOAD (staging) ===")
     load_all(db_path=DB_PATH, rebuild=rebuild_staging)
 
     print("=== 2) FEATURE STORE (SQL) ===")
     run_all(DB_PATH)
 
+    
     print("=== 3) TREINO + MLFLOW ===")
     metrics_df = train_all(DB_PATH, train_end=train_end)
     metrics_df.to_csv("exports/metrics_training_summary.csv", index=False)
